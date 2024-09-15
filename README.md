@@ -57,6 +57,7 @@ const quoteArgs = {
   slippage: "0.5", // Slippage tolerance percentage
   chainId: 1, // network ID (mainnet in this case)
   partner: "partnerName", // Partner name for analytics and tracking
+  dexMinAmountOut: "1000000000000000000", // The minimum amount of output token that the dex router can guarantee
 };
 
 const quote = await fetchQuote(quoteArgs);
