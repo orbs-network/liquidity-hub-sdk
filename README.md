@@ -1,30 +1,84 @@
-# React + TypeScript + Vite
+# @orbs-network/liquidity-hub-sdk
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The `@orbs-network/liquidity-hub-sdk` allows developers and integrators to interact with the Orbs Network Liquidity Hub seamlessly. This SDK provides functionality to fetch token swap quotes and execute swaps through liquidity pools. Perfect for dApp developers, exchanges, and any other users looking to integrate liquidity solutions.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Table of Contents
 
-## Expanding the ESLint configuration
+- [Features](#features)
+- [Installation](#installation)
+- [Setup](#setup)
+- [Usage](#usage)
+  - [Fetching a Quote](#fetching-a-quote)
+  - [Performing a Swap](#performing-a-swap)
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+---
 
-- Configure the top-level `parserOptions` property like this:
+## Features
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
+- **Quote Generation**: Get real-time token swap quotes.
+- **Token Swapping**: Perform secure token swaps with built-in analytics.
+- **Error Handling**: Full error reporting and analytics support for swap and quote requests.
+
+---
+
+## Installation
+
+To install the SDK into your project, run the following command using NPM or Yarn:
+
+### Using NPM
+
+```bash
+npm install @orbs-network/liquidity-hub-sdk
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+### Using Yarn
+
+```bash
+yarn add @orbs-network/liquidity-hub-sdk
+```
+
+---
+
+## usage
+
+### Fetching a Quote 
+
+Use the `fetchQuote` function to retrieve a real-time token swap quote.
+
+```typescript
+import { fetchQuote } from "@orbs-network/liquidity-hub-sdk";
+
+const quoteArgs = {
+  fromToken: "0xTokenA", // Address of the input token
+  toToken: "0xTokenB", // Address of the output token
+  inAmount: "1000000000000000000", // Amount of input token in wei (e.g., 1 token)
+  account: "0xYourWalletAddress", // Address of the user
+  slippage: "0.5", // Slippage tolerance percentage
+  chainId: 1, // network ID (mainnet in this case)
+  partner: "partnerName", // Partner name for analytics and tracking
+};
+
+const quote = await fetchQuote(quoteArgs);
+console.log("Fetched Quote:", quote);
+```
+
+
+### Performing a Swap
+
+Once you’ve obtained a quote, you can execute the swap using the `swap` function.
+
+```typescript
+import { swap } from "@orbs-network/liquidity-hub-sdk";
+
+const txHash = await swap(
+  quote, // The quote obtained from `fetchQuote`
+  "signature", // A valid EIP712 signature of the quote.permitData 
+  1 // Chain ID (Ethereum mainnet)
+);
+
+console.log("Transaction successful:", tx);
+```
+
+---
