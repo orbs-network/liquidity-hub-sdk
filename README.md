@@ -8,7 +8,6 @@ The `@orbs-network/liquidity-hub-sdk` allows developers and integrators to inter
 
 - [Features](#features)
 - [Installation](#installation)
-- [Setup](#setup)
 - [Usage](#usage)
   - [Fetching a Quote](#fetching-a-quote)
   - [Performing a Swap](#performing-a-swap)
