@@ -1,5 +1,5 @@
 export * from "./util";
 export * from "./consts";
-export * from "./quote";
-export * from "./swap";
+export {fetchQuote} from "./quote";
+export {swap, getTxDetails} from "./swap";
 

@@ -1,5 +1,5 @@
 import { swapAnalytics } from "./analytics";
-import { Quote } from "./quote";
+import { Quote } from "./types";
 import { counter, getApiUrl, delay } from "./util";
 
 interface Args {
@@ -87,16 +87,7 @@ export const swap = async (
     }
     swapAnalytics.onSwapSuccess(txHash, count());
 
-    const txData = await getTxDetailsFromApi(txHash, chainId, quote);
-
-    swapAnalytics.onClobOnChainSwapSuccess(
-      txData?.exactOutAmount,
-      txData?.gasCharges
-    );
-    return {
-      txHash,
-      ...txData,
-    };
+    return txHash
   } catch (error) {
     swapAnalytics.onSwapFailed((error as any).message, count());
     throw error;
@@ -109,7 +100,7 @@ type TxDetailsFromApi = {
   gasCharges: string;
 };
 
-export const getTxDetailsFromApi = async (
+export const getTxDetails = async (
   txHash: string,
   chainId: number,
   quote?: Quote

@@ -1,6 +1,6 @@
 import { counter, getApiUrl } from "./util";
 import { swapAnalytics } from "./analytics";
-import { QuoteArgs } from "./types";
+import { Quote, QuoteArgs } from "./types";
 const QUOTE_TIMEOUT = 10_000
 
 export async function promiseWithTimeout<T>(
@@ -26,23 +26,6 @@ export async function promiseWithTimeout<T>(
 }
 
 
-export interface Quote {
-  inToken: string;
-  outToken: string;
-  inAmount: string;
-  outAmount: string;
-  user: string;
-  slippage: number;
-  qs: string;
-  partner: string;
-  exchange: string;
-  sessionId: string;
-  serializedOrder: string;
-  permitData: any;
-  minAmountOut: string;
-  error?: string;
-  gasAmountOut?: string;
-}
 
 const safeEncodeURIComponent = () => {
   try {

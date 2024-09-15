@@ -1,5 +1,4 @@
-import { Quote } from "./quote";
-import { QuoteArgs } from "./types";
+import { QuoteArgs, Quote } from "./types";
 
 type analyticsActionState = "pending" | "success" | "failed" | "null" | "";
 
