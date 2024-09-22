@@ -1,4 +1,4 @@
-export * from "./util";
+export {isLiquidityHubTrade} from "./util";
 export * from "./consts";
 export { fetchQuote } from "./quote";
 export { swap, getTxDetails } from "./swap";
