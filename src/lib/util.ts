@@ -1,3 +1,5 @@
+import { Quote } from "./types";
+
 export function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -24,11 +26,14 @@ export const getApiUrl = (chainId: number) => {
   }
 };
 
-export const counter = () => {
-  const now = Date.now();
-
-  return () => {
-    return Date.now() - now;
-  };
+export const isLiquidityHubTrade = (
+  quote?: Quote,
+  dexMinAmountOut?: string
+) => {
+  if (!dexMinAmountOut || !quote?.referencePrice) return false;
+  const safeDexMinAmountOut = BigInt(dexMinAmountOut.split(".")[0]);
+  const safeReferencePrice = BigInt(quote.referencePrice?.split(".")[0]);
+  const diff =
+    (safeDexMinAmountOut / safeReferencePrice - BigInt(1)) * BigInt(100);
+  return Number(diff) < 0.01;
 };
-

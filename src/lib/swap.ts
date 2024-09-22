@@ -1,6 +1,6 @@
 import { swapAnalytics } from "./analytics";
 import { Quote } from "./types";
-import { counter, getApiUrl, delay } from "./util";
+import { getApiUrl, delay } from "./util";
 
 interface Args {
   signature: string;
@@ -16,8 +16,6 @@ interface Args {
 
 const swapX = async (args: Args) => {
   const { account, chainId, apiUrl } = args;
-
-  const count = counter();
   swapAnalytics.onSwapRequest();
   try {
     if (!args.quote) {
@@ -48,7 +46,7 @@ const swapX = async (args: Args) => {
     return swap.txHash;
   } catch (error: any) {
     const msg = error.message.error || error.message;
-    swapAnalytics.onSwapFailed(msg, count());
+    swapAnalytics.onSwapFailed(msg);
     throw new Error(msg);
   }
 };
@@ -60,7 +58,6 @@ export const swap = async (
   dexTx?: any
 ) => {
   const apiUrl = getApiUrl(chainId);
-  const count = counter();
   swapX({
     signature,
     inTokenAddress: quote.inToken,
@@ -85,11 +82,11 @@ export const swap = async (
     if (!txHash) {
       throw new Error("swap failed");
     }
-    swapAnalytics.onSwapSuccess(txHash, count());
+    swapAnalytics.onSwapSuccess(txHash);
 
     return txHash
   } catch (error) {
-    swapAnalytics.onSwapFailed((error as any).message, count());
+    swapAnalytics.onSwapFailed((error as any).message);
     throw error;
   }
 };

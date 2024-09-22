@@ -1,5 +1,6 @@
 {
   "name": "@orbs-network/liquidity-hub-sdk",
+  "type": "module",
   "version": "1.0.13",
   "main": "dist/main.umd.js",
   "module": "dist/main.es.js",
@@ -19,6 +20,7 @@
   ],
   "scripts": {
     "dev": "vite",
+    "test": "tsc src/lib/util.ts --noEmit",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },

@@ -1,4 +1,4 @@
-import { counter, getApiUrl } from "./util";
+import { getApiUrl } from "./util";
 import { swapAnalytics } from "./analytics";
 import { Quote, QuoteArgs } from "./types";
 const QUOTE_TIMEOUT = 10_000
@@ -38,7 +38,6 @@ const safeEncodeURIComponent = () => {
 export const fetchQuote = async (args: QuoteArgs) => {
   const apiUrl = getApiUrl(args.chainId);
   swapAnalytics.onQuoteRequest(args);
-  const count = counter();
 
   try {
     const response = await promiseWithTimeout(
@@ -67,10 +66,10 @@ export const fetchQuote = async (args: QuoteArgs) => {
     if (quote.error) {
       throw new Error(quote.error);
     }
-    swapAnalytics.onQuoteSuccess(count(), quote);
+    swapAnalytics.onQuoteSuccess(quote);
     return quote as Quote;
   } catch (error: any) {
-    swapAnalytics.onQuoteFailed(error.message, count());
+    swapAnalytics.onQuoteFailed(error.message);
     throw new Error(error.message);
   }
 };

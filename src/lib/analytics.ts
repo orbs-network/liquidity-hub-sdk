@@ -77,7 +77,7 @@ const initialData: Partial<AnalyticsData> = {
   version: ANALYTICS_VERSION,
 };
 
-const onWallet = (provider: any) => {
+const getWalletName = (provider: any) => {
   try {
     if (provider.isRabby) {
       return "rabby";
@@ -127,6 +127,11 @@ export class Analytics {
   data = {} as Partial<AnalyticsData>;
   firstFailureSessionId = "";
   timeout: any = undefined;
+  signatureStart = 0;
+  wrapStart = 0;
+  approvalStart = 0;
+  swapStart = 0;
+  quoteStart = 0;
 
   constructor() {
     let liquidityHubDisabled = false;
@@ -155,6 +160,7 @@ export class Analytics {
   }
 
   onQuoteRequest(args: QuoteArgs) {
+    this.quoteStart = Date.now();
     const getDexOutAmountWS = () => {
       const dexMinAmountOut = Number(args.dexMinAmountOut || "0");
       const slippageAmount = !args.slippage
@@ -179,7 +185,7 @@ export class Analytics {
     };
   }
 
-  onQuoteSuccess(quoteMillis: number, quote: Quote) {
+  onQuoteSuccess(quote: Quote) {
     const clobDexPriceDiffPercent = getDiff(
       quote.minAmountOut,
       this.data.dexAmountOut
@@ -188,7 +194,7 @@ export class Analytics {
     this.data = {
       ...this.data,
       quoteState: "success",
-      quoteMillis,
+      quoteMillis: Date.now() - this.quoteStart,
       quoteError: undefined,
       isNotClobTradeReason: undefined,
       quoteAmountOut: quote?.outAmount,
@@ -199,99 +205,96 @@ export class Analytics {
     };
   }
 
-  onQuoteFailed(error: string, quoteMillis: number) {
+  onQuoteFailed(error: string) {
     this.updateAndSend({
       quoteError: error,
       quoteState: "failed",
       isNotClobTradeReason: `quote-failed`,
-      quoteMillis,
+      quoteMillis: Date.now() - this.quoteStart,
     });
   }
 
   onApprovalRequest() {
+    this.approvalStart = Date.now();
     this.updateAndSend({ approvalState: "pending" });
   }
 
-  onApprovalSuccess(time: number) {
-    this.updateAndSend({ approvalMillis: time, approvalState: "success" });
+  onApprovalSuccess() {
+    this.updateAndSend({
+      approvalMillis: Date.now() - this.approvalStart,
+      approvalState: "success",
+    });
   }
 
-  onApprovalFailed(error: string, time: number) {
+  onApprovalFailed(error: string) {
     this.updateAndSend({
       approvalError: error,
       approvalState: "failed",
-      approvalMillis: time,
+      approvalMillis: Date.now() - this.approvalStart,
       isNotClobTradeReason: "approval failed",
     });
   }
 
-  onSignatureRequest() {
-    this.updateAndSend({ signatureState: "pending" });
-  }
   onWallet(provider: any) {
-    this.updateAndSend({ walletConnectName: onWallet(provider) });
+    this.updateAndSend({ walletConnectName: getWalletName(provider) });
   }
 
   onWrapRequest() {
+    this.wrapStart = Date.now();
     this.updateAndSend({ wrapState: "pending" });
   }
 
-  onWrapSuccess(time: number) {
+  onWrapSuccess() {
     this.updateAndSend({
-      wrapMillis: time,
+      wrapMillis: Date.now() - this.wrapStart,
       wrapState: "success",
     });
   }
 
-  onWrapFailed(error: string, time: number) {
+  onWrapFailed(error: string) {
     this.updateAndSend({
       wrapError: error,
       wrapState: "failed",
-      wrapMillis: time,
+      wrapMillis: Date.now() - this.wrapStart,
       isNotClobTradeReason: "wrap failed",
     });
   }
 
-  onSignatureSuccess(signature: string, time: number) {
+  onSignatureRequest() {
+    this.signatureStart = Date.now();
+    this.updateAndSend({ signatureState: "pending" });
+  }
+
+  onSignatureSuccess(signature: string) {
     this.updateAndSend({
       signature,
-      signatureMillis: time,
+      signatureMillis: Date.now() - this.signatureStart,
       signatureState: "success",
     });
   }
 
-  onSignatureFailed(error: string, time: number) {
+  onSignatureFailed(error: string) {
     this.updateAndSend({
       signatureError: error,
       signatureState: "failed",
-      signatureMillis: time,
+      signatureMillis: Date.now() - this.signatureStart,
       isNotClobTradeReason: "signature failed",
     });
   }
 
   onSwapRequest() {
+    this.swapStart = Date.now();
     this.updateAndSend({ swapState: "pending" });
   }
 
-  onSwapSuccess(txHash: string, time: number) {
+  onSwapSuccess(txHash: string) {
     this.updateAndSend({
       txHash,
-      swapMillis: time,
+      swapMillis: Date.now() - this.swapStart,
       swapState: "success",
       isClobTrade: true,
       onChainClobSwapState: "pending",
     });
-  }
-
-  onSwapFailed(error: string, time: number) {
-    this.updateAndSend({
-      swapError: error,
-      swapState: "failed",
-      swapMillis: time,
-    });
-  }
-
-  clearState() {
     setTimeout(() => {
       this.data = {
         ...initialData,
@@ -303,22 +306,36 @@ export class Analytics {
     }, 1_000);
   }
 
-  async onClobOnChainSwapSuccess(exactOutAmount?: string, gasCharges?: string) {
+  onSwapFailed(error: string) {
     this.updateAndSend({
-      onChainClobSwapState: "success",
-      exactOutAmount,
-      gasCharges,
+      swapError: error,
+      swapState: "failed",
+      swapMillis: Date.now() - this.swapStart,
+      firstFailureSessionId: this.data.sessionId,
     });
-  }
-
-  onNotClobTrade(message: string) {
-    this.updateAndSend({ isNotClobTradeReason: message });
-  }
-
-  onClobFailure() {
-    this.firstFailureSessionId =
-      this.firstFailureSessionId || this.data.sessionId || "";
   }
 }
 
-export const swapAnalytics = new Analytics();
+const swapAnalytics = new Analytics();
+
+export { swapAnalytics };
+
+export const onApprovalRequest =
+  swapAnalytics.onApprovalRequest.bind(swapAnalytics);
+export const onApprovalSuccess =
+  swapAnalytics.onApprovalSuccess.bind(swapAnalytics);
+export const onApprovalFailed =
+  swapAnalytics.onApprovalFailed.bind(swapAnalytics);
+
+export const onWrapRequest = swapAnalytics.onWrapRequest.bind(swapAnalytics);
+export const onWrapSuccess = swapAnalytics.onWrapSuccess.bind(swapAnalytics);
+export const onWrapFailed = swapAnalytics.onWrapFailed.bind(swapAnalytics);
+
+export const onSignatureRequest =
+  swapAnalytics.onSignatureRequest.bind(swapAnalytics);
+export const onSignatureSuccess =
+  swapAnalytics.onSignatureSuccess.bind(swapAnalytics);
+export const onSignatureFailed =
+  swapAnalytics.onSignatureFailed.bind(swapAnalytics);
+
+export const onWallet = swapAnalytics.onWallet.bind(swapAnalytics);
