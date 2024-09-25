@@ -98,11 +98,13 @@ const onSwap = () => {
 
 ### Performing a Swap
 
-1. Approve allowance for the input token. Use the permit2 contract at 0x000000000022D473030F116dDEE9F6B43aC78BA3. (permit2 contract address)
+1. If the input token is a native token, wrap the token first.
 
-2. Sign the permit data using the EIP-712 sign function.
+2. Approve allowance for the input token. Use the `permit2` contract at `0x000000000022D473030F116dDEE9F6B43aC78BA3`. (Permit2 contract address)
 
-3. Call the swap function with the quote and signature.
+3. Sign the permit data using the EIP-712 sign function.
+
+4. Call the swap function with the quote and signature.
 
 ```typescript
 const txHash = await liquidityHubSDK.swap(
