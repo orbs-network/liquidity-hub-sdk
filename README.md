@@ -1,36 +1,40 @@
-# @orbs-network/liquidity-hub-sdk
+# **@orbs-network/liquidity-hub-sdk**
 
-The `@orbs-network/liquidity-hub-sdk` allows developers and integrators to interact with the Orbs Network Liquidity Hub seamlessly. This SDK provides functionality to fetch token swap quotes and execute swaps through liquidity pools. Perfect for dApp developers, exchanges, and any other users looking to integrate liquidity solutions.
+The `@orbs-network/liquidity-hub-sdk` empowers developers and integrators to seamlessly interact with the Orbs Network Liquidity Hub. With features for fetching token swap quotes and executing swaps, it’s ideal for dApp developers, exchanges, and anyone looking to integrate liquidity solutions.
 
 ---
 
-## Table of Contents
+## **Table of Contents**
 
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
+  - [Creating SDK Instance](#creating-sdk-instance)
   - [Fetching a Quote](#fetching-a-quote)
-  - [Using analytics](#useing-analytics)
+  - [Comparing Minimum Output Amounts](#comparing-minimum-output-amounts)
   - [Performing a Swap](#performing-a-swap)
+  - [Fetching Transaction Details](#fetching-transaction-details)
+  - [Analytics](#analytics)
 
 ---
 
-## Features
+## **Features**
 
-- **Quote Generation**: Get real-time token swap quotes.
-- **Token Swapping**: Perform secure token swaps with built-in analytics.
-- **Error Handling**: Full error reporting and analytics support for swap and quote requests.
+- **Real-Time Quotes**: Fetch real-time token swap quotes quickly and efficiently.
+- **Token Swaps**: Execute secure token swaps through liquidity pools.
+- **Error Handling**: Full error reporting and analytics for swap and quote requests.
 
 ---
 
-## Installation
+## **Installation**
 
-To install the SDK into your project, run the following command using NPM or Yarn:
+To install the SDK, use either `npm` or `yarn`.
 
-### Using NPM
+### **Using NPM**
 
 ```bash
 npm install @orbs-network/liquidity-hub-sdk
+
 ```
 
 ### Using Yarn
@@ -41,81 +45,95 @@ yarn add @orbs-network/liquidity-hub-sdk
 
 ---
 
-## usage
+## **Usage**
 
-### Fetching a Quote 
+### **Creating SDK Instance**
 
-Use the `fetchQuote` function to retrieve a real-time token swap quote.
-If the input token is native, use the wrapped token address for the `fromToken` field.
+To use the SDK, create an instance of the liquidity hub SDK. This instance provides the primary functionality to interact with the Orbs Network Liquidity Hub.
 
 ```typescript
-import { fetchQuote } from "@orbs-network/liquidity-hub-sdk";
+import { constructSDK } from "@orbs-network/liquidity-hub-sdk";
 
+const liquidityHubSDK = constructSDK({
+  chainId: 1, // The connected chain ID (1 for mainnet)
+  partner: "partnerName", // Your partner name
+});
+```
+
+### Fetching a Quote
+
+Use the getQuote function to retrieve a real-time token swap quote. For native tokens, use the wrapped token address in the fromToken field.
+
+```typescript
 const quoteArgs = {
   fromToken: "0xTokenA", // Address of the input token
   toToken: "0xTokenB", // Address of the output token
-  inAmount: "1000000000000000000", // Amount of input token in wei (e.g., 1 token)
-  account: "0xYourWalletAddress", // Address of the user
+  inAmount: "1000000000000000000", // Input token amount in wei (1 token)
+  account: "0xYourWalletAddress", // User's wallet address
   slippage: "0.5", // Slippage tolerance percentage
-  chainId: 1, // network ID (mainnet in this case)
-  partner: "partnerName", // Partner name for analytics and tracking
-  dexMinAmountOut: "1000000000000000000", // The minimum amount of output token that the dex router can guarantee
+  dexMinAmountOut: "1000000000000000000", // Minimum output from DEX in wei
+  signal, // Optional: Abort signal
+  timeout, // Optional: Timeout in milliseconds, default is 10 seconds
 };
 
-const quote = await fetchQuote(quoteArgs);
-console.log("Fetched Quote:", quote);
+const quote = await liquidityHubSDK.getQuote(quoteArgs);
 ```
 
+### Comparing Minimum Output Amounts
+
+After fetching a quote, you can compare the Liquidity Hub quote's minAmountOut with the DEX’s dexMinAmountOut to decide which is better for the swap.
+
+```typescript
+const isLiquidityHubBetter =
+  BigInt(quote.minAmountOut) > BigInt(dexMinAmountOut);
+
+const onSwap = () => {
+  if (isLiquidityHubBetter) {
+    // Swap using Liquidity Hub
+  } else {
+    // Swap using DEX
+  }
+};
+```
 
 ### Performing a Swap
 
-Once you’ve obtained a quote, you can execute the swap using the `swap` function.
-Make sure to provide a valid EIP712 signature of the quote.permitData as the second argument.
-Make sure to approve allowance for the input token before calling the `swap` function, spender contract is 
-0x000000000022D473030F116dDEE9F6B43aC78BA3 (permit2 contract address)
+1. Approve allowance for the input token. Use the permit2 contract at 0x000000000022D473030F116dDEE9F6B43aC78BA3. (permit2 contract address)
 
-we suggest to use our analytics callbacks, to get more insights about the swap.
+2. Sign the permit data using the EIP-712 sign function.
+
+3. Call the swap function with the quote and signature.
 
 ```typescript
-import { swap } from "@orbs-network/liquidity-hub-sdk";
-
-const txHash = await swap(
-  quote, // The quote obtained from `fetchQuote`
-  "signature", // A valid EIP712 signature of the quote.permitData 
-  1 // Chain ID (Ethereum mainnet)
+const txHash = await liquidityHubSDK.swap(
+  quote, // The quote obtained from `getQuote`
+  "signature" // A valid EIP-712 signature for the quote's permitData
 );
-
-console.log("Transaction successful:", tx);
 ```
 
+### Fetching Transaction Details
 
-
-### Fetching Transaction Details After a Swap
-
-Once a swap is completed, you can fetch the transaction details using the `getTxDetails` function. This will check the transaction status on-chain and return the details if the transaction has been successfully mined.
+Once a swap is completed, you can fetch the transaction details using the getTransactionDetails function. This function checks the on-chain status of the transaction and returns details once it has been successfully mined.
 
 ```typescript
-import { getTxDetails } from "@orbs-network/liquidity-hub-sdk";
+const txHash = "0xYourTransactionHash";  // Replace with your actual transaction hash you got from swap function
 
-// Example usage
-const txHash = "0xYourTransactionHash";  // Replace with your actual transaction hash
-const chainId = 1;  
+ const txDetails = await liquidityHubSDK.getTransactionDetails(txHash, quote);
+---
+```
+
+### Analytics
+
+The SDK provides built-in analytics to help track the performance of your swaps. When performing operations such as wrapping, approving, or signing, you can use the analytics callbacks.
+
+```typescript
+const analytics = await liquidityHubSDK.analytics;
 
 try {
-  const txDetails = await getTxDetails(txHash, chainId, quote);
-  
-  // Destructure the response to extract the fields
-  const { status, exactOutAmount, gasCharges } = txDetails;
-
-  if (status.toLowerCase() === "mined") {
-    console.log("Transaction mined successfully!");
-    console.log("Exact Output Amount:", exactOutAmount);
-    console.log("Gas Charges:", gasCharges);
-  } else {
-    console.log("Transaction status:", status);
-  }
+  analytics.onWrapRequest(); // Trigger when wrap is requested
+  wrap(); // Perform the wrap operation
+  analytics.onWrapSuccess(); // Trigger on successful wrap
 } catch (error) {
-  console.error("Error fetching transaction details:", error.message);
+  analytics.onWrapFailure(error.message); // Trigger on wrap failure
 }
-
----
+```
