@@ -1,6 +1,6 @@
 # **@orbs-network/liquidity-hub-sdk**
 
-The `@orbs-network/liquidity-hub-sdk` empowers developers and integrators to seamlessly interact with the Orbs Network Liquidity Hub. With features for fetching token swap quotes and executing swaps, it’s ideal for dApp developers, exchanges, and anyone looking to integrate liquidity solutions.
+The `@orbs-network/liquidity-hub-sdk` empowers developers and integrators to seamlessly interact with the Orbs Liquidity Hub. With features for fetching token swap quotes and executing swaps, it’s ideal for dApp developers, exchanges, and anyone looking to integrate liquidity solutions.
 
 ---
 
@@ -15,6 +15,7 @@ The `@orbs-network/liquidity-hub-sdk` empowers developers and integrators to sea
   - [Performing a Swap](#performing-a-swap)
   - [Fetching Transaction Details](#fetching-transaction-details)
   - [Analytics](#analytics)
+  - [UI](#ui)
 
 ---
 
@@ -49,7 +50,7 @@ yarn add @orbs-network/liquidity-hub-sdk
 
 ### **Creating SDK Instance**
 
-To use the SDK, create an instance of the liquidity hub SDK. This instance provides the primary functionality to interact with the Orbs Network Liquidity Hub.
+To use the SDK, create an instance of the liquidity hub SDK. This instance provides the primary functionality to interact with the Orbs Liquidity Hub.
 
 ```typescript
 import { constructSDK } from "@orbs-network/liquidity-hub-sdk";
@@ -62,7 +63,7 @@ const liquidityHubSDK = constructSDK({
 
 ### Fetching a Quote
 
-Use the getQuote function to retrieve a real-time token swap quote. For native tokens, use the wrapped token address in the fromToken field.
+Use the getQuote function to retrieve a real-time token swap quote. For native tokens, use the wrapped token address in the `fromToken` field.
 
 ```typescript
 const quoteArgs = {
@@ -115,7 +116,7 @@ const txHash = await liquidityHubSDK.swap(
 
 ### Fetching Transaction Details
 
-Once a swap is completed, you can fetch the transaction details using the getTransactionDetails function. This function checks the on-chain status of the transaction and returns details once it has been successfully mined.
+Once a swap is completed, you can fetch the transaction details using the `getTransactionDetails` function. This function checks the on-chain status of the transaction and returns details once it has been successfully mined.
 
 ```typescript
 const txHash = "0xYourTransactionHash";  // Replace with your actual transaction hash you got from swap function
@@ -139,3 +140,7 @@ try {
   analytics.onWrapFailure(error.message); // Trigger on wrap failure
 }
 ```
+
+### UI
+
+Check ui components library for swap flow in[this repo ](https://github.com/orbs-network/swap-ui)
