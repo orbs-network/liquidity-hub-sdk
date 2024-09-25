@@ -2,7 +2,7 @@ import { QuoteArgs, Quote } from "./types";
 
 type analyticsActionState = "pending" | "success" | "failed" | "null" | "";
 
-export interface AnalyticsData {
+interface AnalyticsData {
   moduleLoaded: boolean;
   liquidityHubDisabled: boolean;
 
@@ -12,6 +12,7 @@ export interface AnalyticsData {
   isForceClob: boolean;
   firstFailureSessionId?: string;
   sessionId?: string;
+  referencePrice?: string;
   walletAddress: string;
 
   dexAmountOut: string;
@@ -31,6 +32,7 @@ export interface AnalyticsData {
   approvalState: analyticsActionState;
   approvalError: string;
   approvalMillis: number | null;
+  approvalTxHash?: string;
 
   signatureState: analyticsActionState;
   signatureMillis: number | null;
@@ -61,52 +63,27 @@ export interface AnalyticsData {
   quoteError?: string;
   walletConnectName?: string;
 
+  getDetailsState?: analyticsActionState;
   exactOutAmount?: string;
   gasCharges?: string;
 }
 
-const ANALYTICS_VERSION = 0.7;
-const BI_ENDPOINT = `https://bi.orbs.network/putes/liquidity-hub-${ANALYTICS_VERSION}`;
-
-const initialData: Partial<AnalyticsData> = {
-  _id: crypto.randomUUID(),
-  isClobTrade: false,
-  quoteIndex: 0,
-  isForceClob: false,
-  isDexTrade: false,
-  version: ANALYTICS_VERSION,
-};
-
-const getWalletName = (provider: any) => {
-  try {
-    if (provider.isRabby) {
-      return "rabby";
-    }
-    if (provider.isWalletConnect) {
-      return "walletConnect";
-    }
-    if (provider.isCoinbaseWallet) {
-      return "coinbaseWallet";
-    }
-    if (provider.isOkxWallet) {
-      return "okxWallet";
-    }
-    if (provider.isTrustWallet) {
-      return "trustWallet";
-    }
-    if (provider.isMetaMask) {
-      return "metaMask";
-    }
-  } catch (error) {}
-};
+const ANALYTICS_VERSION = 0.8;
+const BI_ENDPOINT = `https://bi.orbs.network/putes/liquidity-hub-ui-${ANALYTICS_VERSION}`;
 
 const getDiff = (quoteAmountOut?: string, dexAmountOut?: string) => {
-  return !dexAmountOut
-    ? "0"
-    : (
-        (Number(quoteAmountOut || "0") / Number(dexAmountOut) - 1) *
-        100
-      ).toFixed();
+  if (
+    !quoteAmountOut ||
+    quoteAmountOut === "0" ||
+    !dexAmountOut ||
+    dexAmountOut === "0"
+  ) {
+    return "0";
+  }
+  return (
+    (Number(quoteAmountOut || "0") / Number(dexAmountOut) - 1) *
+    100
+  ).toFixed();
 };
 
 const sendBI = async (data: Partial<AnalyticsData>) => {
@@ -121,20 +98,29 @@ const sendBI = async (data: Partial<AnalyticsData>) => {
     });
   } catch (error) {}
 };
+function generateId() {
+  const part1 = Math.random().toString(36).substring(2, 16); // Generate 16 random characters
+  const part2 = Math.random().toString(36).substring(2, 16); // Generate another 16 random characters
+  const timestamp = Date.now().toString(36); // Generate a timestamp
+  return `id_${part1 + part2 + timestamp}`; // Concatenate all parts
+}
 
 export class Analytics {
-  initialTimestamp = Date.now();
-  data = {} as Partial<AnalyticsData>;
-  firstFailureSessionId = "";
-  timeout: any = undefined;
-  signatureStart = 0;
-  wrapStart = 0;
-  approvalStart = 0;
-  swapStart = 0;
-  quoteStart = 0;
+  private data = {} as Partial<AnalyticsData>;
+  private timeout: any = undefined;
+  private signatureStart = 0;
+  private wrapStart = 0;
+  private approvalStart = 0;
+  private swapStart = 0;
+  private quoteStart = 0;
+  private prevData = {} as Partial<AnalyticsData>;
 
   constructor() {
     let liquidityHubDisabled = false;
+    this.data = {
+      _id: generateId(),
+      version: ANALYTICS_VERSION,
+    };
 
     try {
       liquidityHubDisabled = JSON.parse(
@@ -148,7 +134,13 @@ export class Analytics {
     });
   }
 
-  public async updateAndSend(values = {} as Partial<AnalyticsData>) {
+  init(partner: string, chainId?: number) {
+    if (this.data.chainId !== chainId || this.data.partner !== partner) {
+      this.updateAndSend({ chainId, partner });
+    }
+  }
+
+  public updateAndSend(values = {} as Partial<AnalyticsData>) {
     this.data = {
       ...this.data,
       ...values,
@@ -175,13 +167,11 @@ export class Analytics {
       quoteIndex: !this.data.quoteIndex ? 1 : this.data.quoteIndex + 1,
       srcTokenAddress: args.fromToken,
       dstTokenAddress: args.toToken,
-      chainId: args.chainId,
       slippage: args.slippage,
       walletAddress: args.account,
       dexAmountOut: args.dexMinAmountOut,
       dexOutAmountWS: getDexOutAmountWS(),
       srcAmount: args.inAmount,
-      partner: args.partner,
     };
   }
 
@@ -202,6 +192,7 @@ export class Analytics {
       quoteMinAmountOut: quote?.minAmountOut,
       clobDexPriceDiffPercent,
       sessionId: quote.sessionId,
+      referencePrice: quote.referencePrice,
     };
   }
 
@@ -219,10 +210,11 @@ export class Analytics {
     this.updateAndSend({ approvalState: "pending" });
   }
 
-  onApprovalSuccess() {
+  onApprovalSuccess(approvalTxHash?: string) {
     this.updateAndSend({
       approvalMillis: Date.now() - this.approvalStart,
       approvalState: "success",
+      approvalTxHash,
     });
   }
 
@@ -233,10 +225,6 @@ export class Analytics {
       approvalMillis: Date.now() - this.approvalStart,
       isNotClobTradeReason: "approval failed",
     });
-  }
-
-  onWallet(provider: any) {
-    this.updateAndSend({ walletConnectName: getWalletName(provider) });
   }
 
   onWrapRequest() {
@@ -258,6 +246,24 @@ export class Analytics {
       wrapMillis: Date.now() - this.wrapStart,
       isNotClobTradeReason: "wrap failed",
     });
+  }
+
+  onTxDetailsSuccess(exactOutAmount: string, gasCharges: string) {
+    const data = {
+      ...this.prevData,
+      exactOutAmount,
+      gasCharges,
+      getDetailsState: "success",
+    } as Partial<AnalyticsData>;
+    sendBI(data);
+  }
+
+  onTxDetailsFailed() {
+    const data = {
+      ...this.prevData,
+      getDetailsState: "failed",
+    } as Partial<AnalyticsData>;
+    sendBI(data);
   }
 
   onSignatureRequest() {
@@ -288,22 +294,23 @@ export class Analytics {
   }
 
   onSwapSuccess(txHash: string) {
-    this.updateAndSend({
+    this.data = {
+      ...this.data,
       txHash,
       swapMillis: Date.now() - this.swapStart,
       swapState: "success",
       isClobTrade: true,
-      onChainClobSwapState: "pending",
-    });
-    setTimeout(() => {
-      this.data = {
-        ...initialData,
-        partner: this.data.partner,
-        chainId: this.data.chainId,
-        _id: crypto.randomUUID(),
-        firstFailureSessionId: this.firstFailureSessionId,
-      };
-    }, 1_000);
+    } as AnalyticsData;
+
+    this.prevData = { ...this.data };
+
+    sendBI(this.data);
+    this.data = {
+      _id: generateId(),
+      version: ANALYTICS_VERSION,
+      chainId: this.data.chainId,
+      partner: this.data.partner,
+    };
   }
 
   onSwapFailed(error: string) {
@@ -315,27 +322,3 @@ export class Analytics {
     });
   }
 }
-
-const swapAnalytics = new Analytics();
-
-export { swapAnalytics };
-
-export const onApprovalRequest =
-  swapAnalytics.onApprovalRequest.bind(swapAnalytics);
-export const onApprovalSuccess =
-  swapAnalytics.onApprovalSuccess.bind(swapAnalytics);
-export const onApprovalFailed =
-  swapAnalytics.onApprovalFailed.bind(swapAnalytics);
-
-export const onWrapRequest = swapAnalytics.onWrapRequest.bind(swapAnalytics);
-export const onWrapSuccess = swapAnalytics.onWrapSuccess.bind(swapAnalytics);
-export const onWrapFailed = swapAnalytics.onWrapFailed.bind(swapAnalytics);
-
-export const onSignatureRequest =
-  swapAnalytics.onSignatureRequest.bind(swapAnalytics);
-export const onSignatureSuccess =
-  swapAnalytics.onSignatureSuccess.bind(swapAnalytics);
-export const onSignatureFailed =
-  swapAnalytics.onSignatureFailed.bind(swapAnalytics);
-
-export const onWallet = swapAnalytics.onWallet.bind(swapAnalytics);

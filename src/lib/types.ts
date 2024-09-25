@@ -4,10 +4,8 @@ export interface QuoteArgs {
     inAmount: string;
     dexMinAmountOut?: string;
     account?: string;
-    partner: string;
     slippage: number;
     signal?: AbortSignal;
-    chainId: number;
     timeout?: number;
   }
 

@@ -1,7 +1,7 @@
 import { getApiUrl } from "./util";
-import { swapAnalytics } from "./analytics";
+import { Analytics } from "./analytics";
 import { Quote, QuoteArgs } from "./types";
-const QUOTE_TIMEOUT = 10_000
+const QUOTE_TIMEOUT = 10_000;
 
 export async function promiseWithTimeout<T>(
   promise: Promise<T>,
@@ -11,7 +11,7 @@ export async function promiseWithTimeout<T>(
 
   const timeoutPromise = new Promise<never>((_, reject) => {
     timer = setTimeout(() => {
-      reject(new Error('quote timeout'));
+      reject(new Error("quote timeout"));
     }, timeout);
   });
 
@@ -25,23 +25,30 @@ export async function promiseWithTimeout<T>(
   }
 }
 
-
-
 const safeEncodeURIComponent = () => {
   try {
     return encodeURIComponent(window.location.hash || window.location.search);
   } catch (error) {
     return "";
   }
-}
+};
 
-export const fetchQuote = async (args: QuoteArgs) => {
-  const apiUrl = getApiUrl(args.chainId);
-  swapAnalytics.onQuoteRequest(args);
+export const fetchQuote = async (
+  args: QuoteArgs,
+  partner: string,
+  chainId?: number,
+  analytics?: Analytics
+) => {
+  if(!chainId) {
+    throw new Error("chainId is missing in constructSDK");
+  }
+  const apiUrl = getApiUrl(chainId);
+  
+  analytics?.onQuoteRequest(args);
 
   try {
     const response = await promiseWithTimeout(
-      fetch(`${apiUrl}/quote?chainId=${args.chainId}`, {
+      fetch(`${apiUrl}/quote?chainId=${chainId}`, {
         method: "POST",
         body: JSON.stringify({
           inToken: args.fromToken,
@@ -51,7 +58,7 @@ export const fetchQuote = async (args: QuoteArgs) => {
           user: args.account,
           slippage: args.slippage,
           qs: safeEncodeURIComponent(),
-          partner: args.partner.toLowerCase(),
+          partner: partner.toLowerCase(),
         }),
         signal: args.signal,
       }),
@@ -66,10 +73,9 @@ export const fetchQuote = async (args: QuoteArgs) => {
     if (quote.error) {
       throw new Error(quote.error);
     }
-    swapAnalytics.onQuoteSuccess(quote);
+    analytics?.onQuoteSuccess(quote);
     return quote as Quote;
   } catch (error: any) {
-    swapAnalytics.onQuoteFailed(error.message);
     throw new Error(error.message);
   }
 };

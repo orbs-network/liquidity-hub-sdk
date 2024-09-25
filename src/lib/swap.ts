@@ -1,4 +1,4 @@
-import { swapAnalytics } from "./analytics";
+import { Analytics } from "./analytics";
 import { Quote } from "./types";
 import { getApiUrl, delay } from "./util";
 
@@ -16,7 +16,6 @@ interface Args {
 
 const swapX = async (args: Args) => {
   const { account, chainId, apiUrl } = args;
-  swapAnalytics.onSwapRequest();
   try {
     if (!args.quote) {
       throw new Error("Missing quote");
@@ -35,7 +34,7 @@ const swapX = async (args: Args) => {
     });
     const swap = await response.json();
     if (!swap) {
-      throw new Error("Missing swap response");
+      throw new Error("missing swap response");
     }
     if (swap.error) {
       throw new Error(swap.error);
@@ -46,7 +45,6 @@ const swapX = async (args: Args) => {
     return swap.txHash;
   } catch (error: any) {
     const msg = error.message.error || error.message;
-    swapAnalytics.onSwapFailed(msg);
     throw new Error(msg);
   }
 };
@@ -54,10 +52,17 @@ const swapX = async (args: Args) => {
 export const swap = async (
   quote: Quote,
   signature: string,
-  chainId: number,
-  dexTx?: any
+  chainId?: number,
+  dexRouterData?: { data?: string; to?: string },
+  analytics?: Analytics
 ) => {
+  if (!chainId) {
+    throw new Error("chainId is missing in constructSDK");
+  }
+
   const apiUrl = getApiUrl(chainId);
+  analytics?.onSwapRequest();
+
   swapX({
     signature,
     inTokenAddress: quote.inToken,
@@ -67,7 +72,7 @@ export const swap = async (
     account: quote.user,
     chainId,
     apiUrl,
-    dexTx,
+    dexTx: dexRouterData,
   })
     .then()
     .catch(() => {});
@@ -82,11 +87,11 @@ export const swap = async (
     if (!txHash) {
       throw new Error("swap failed");
     }
-    swapAnalytics.onSwapSuccess(txHash);
+    analytics?.onSwapSuccess(txHash);
 
-    return txHash
+    return txHash;
   } catch (error) {
-    swapAnalytics.onSwapFailed((error as any).message);
+    analytics?.onSwapFailed((error as any).message);
     throw error;
   }
 };
@@ -95,13 +100,19 @@ type TxDetailsFromApi = {
   status: string;
   exactOutAmount: string;
   gasCharges: string;
+  isMined?: boolean;
 };
 
 export const getTxDetails = async (
   txHash: string,
-  chainId: number,
-  quote?: Quote
+  quote?: Quote,
+  chainId?: number,
+  analytics?: Analytics
 ): Promise<TxDetailsFromApi> => {
+  if (!chainId) {
+    throw new Error("chainId is missing in constructSDK");
+  }
+
   const apiUrl = getApiUrl(chainId);
   for (let i = 0; i < 10; ++i) {
     await delay(2_500);
@@ -123,12 +134,18 @@ export const getTxDetails = async (
       const result = await response?.json();
 
       if (result && result.status?.toLowerCase() === "mined") {
-        return result;
+        analytics?.onTxDetailsSuccess(result.exactOutAmount, result.gasCharges);
+
+        return {
+          ...result,
+          isMined: true,
+        };
       }
     } catch (error: any) {
       throw new Error(error.message);
     }
   }
+  analytics?.onTxDetailsFailed();
   throw new Error("swap timeout");
 };
 

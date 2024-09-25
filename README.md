@@ -10,6 +10,7 @@ The `@orbs-network/liquidity-hub-sdk` allows developers and integrators to inter
 - [Installation](#installation)
 - [Usage](#usage)
   - [Fetching a Quote](#fetching-a-quote)
+  - [Using analytics](#useing-analytics)
   - [Performing a Swap](#performing-a-swap)
 
 ---
@@ -45,7 +46,7 @@ yarn add @orbs-network/liquidity-hub-sdk
 ### Fetching a Quote 
 
 Use the `fetchQuote` function to retrieve a real-time token swap quote.
-If the input token is native, use the address `0x0000000000000000000000000000000000000000` for the `fromToken` field.
+If the input token is native, use the wrapped token address for the `fromToken` field.
 
 ```typescript
 import { fetchQuote } from "@orbs-network/liquidity-hub-sdk";
@@ -69,9 +70,11 @@ console.log("Fetched Quote:", quote);
 ### Performing a Swap
 
 Once you’ve obtained a quote, you can execute the swap using the `swap` function.
-Make sure to provide a valid EconsIP712 signature of the quote.permitData as the second argument.
+Make sure to provide a valid EIP712 signature of the quote.permitData as the second argument.
 Make sure to approve allowance for the input token before calling the `swap` function, spender contract is 
-0x000000000022D473030F116dDEE9F6B43aC78BA3
+0x000000000022D473030F116dDEE9F6B43aC78BA3 (permit2 contract address)
+
+we suggest to use our analytics callbacks, to get more insights about the swap.
 
 ```typescript
 import { swap } from "@orbs-network/liquidity-hub-sdk";
