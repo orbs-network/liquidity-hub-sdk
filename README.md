@@ -4,4 +4,4 @@ The `@orbs-network/liquidity-hub-sdk` empowers developers and integrators to sea
 
 ---
 
-[Docs](https://docs.orbs.network/orbs-integrations)
+[Integration docs](https://docs.orbs.network/orbs-integrations)
