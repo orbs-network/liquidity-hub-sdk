@@ -1,4 +1,4 @@
 export * from "./consts";
-export { constructSDK } from "./constructSDK";
+export { constructSDK, LiquidityHubSDK } from "./constructSDK";
 export { type Quote, type QuoteArgs } from "./types";
 

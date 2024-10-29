@@ -69,6 +69,8 @@ class LiquidityHubSDK {
   }
 }
 
+
+export {LiquidityHubSDK}
 export const constructSDK = (args: Args): LiquidityHubSDK => {
   return new LiquidityHubSDK(args);
 };
