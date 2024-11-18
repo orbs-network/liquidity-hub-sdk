@@ -1,7 +1,8 @@
 import { QuoteArgs, Quote } from "./types";
 
-type analyticsActionState = "pending" | "success" | "failed" | "null" | "";
 
+type analyticsActionState = "pending" | "success" | "failed" | "null" | "";
+type Executor = 'dex' | 'liquidity-hub'
 interface AnalyticsData {
   moduleLoaded: boolean;
   liquidityHubDisabled: boolean;
@@ -66,6 +67,11 @@ interface AnalyticsData {
   getDetailsState?: analyticsActionState;
   exactOutAmount?: string;
   gasCharges?: string;
+
+  tradeOutAmount?: string;
+  tradeUsdValue?: string;
+  executor?: Executor;
+  dexLiquidityProvider?: string;
 }
 
 const ANALYTICS_VERSION = 0.8;
@@ -224,6 +230,20 @@ export class Analytics {
       approvalState: "failed",
       approvalMillis: Date.now() - this.approvalStart,
       isNotClobTradeReason: "approval failed",
+    });
+  }
+
+  onTradeSuccess(
+    tradeOutAmount?: string,
+    tradeUsdValue?: string,
+    executor?: Executor,
+    dexLiquidityProvider?: string
+  ) {
+    this.updateAndSend({
+      executor,
+      tradeOutAmount,
+      tradeUsdValue,
+      dexLiquidityProvider,
     });
   }
 

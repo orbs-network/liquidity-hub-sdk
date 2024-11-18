@@ -1,32 +1,41 @@
 export function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export const getApiUrl = (chainId: number) => {
-  const overrideUrl = localStorage.getItem('lhOverrideApiUrl')
-
-  if (overrideUrl) return overrideUrl
+  try {
+    const overrideUrl = localStorage.getItem("lhOverrideApiUrl");
+    if (overrideUrl) return overrideUrl;
+  } catch (error) {}
 
   switch (chainId) {
     case 137:
-      return 'https://polygon.hub.orbs.network'
+      return "https://polygon.hub.orbs.network";
     case 56:
-      return 'https://bsc.hub.orbs.network'
+      return "https://bsc.hub.orbs.network";
     case 250:
-      return 'https://ftm.hub.orbs.network'
+      return "https://ftm.hub.orbs.network";
     case 8453:
-      return 'https://base.hub.orbs.network'
+      return "https://base.hub.orbs.network";
     case 59144:
-      return 'https://linea.hub.orbs.network'
+      return "https://linea.hub.orbs.network";
     case 81457:
-      return 'https://blast.hub.orbs.network'
+      return "https://blast.hub.orbs.network";
     case 1101:
-      return 'https://zkevm.hub.orbs.network'
+      return "https://zkevm.hub.orbs.network";
 
     default:
-      return 'https://hub.orbs.network'
+      return "https://hub.orbs.network";
   }
-}
+};
+
+export const devLog = (...args: any[]) => {
+  try {
+    if (localStorage.getItem("lhDebug")) {
+      console.log(...args, 'LH log');
+    }
+  } catch (error) {}
+};
 
 // function parseToBigIntWithPrecision(value: string | number): {
 //   bigIntValue: bigint;

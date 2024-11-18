@@ -1,4 +1,4 @@
-import { getApiUrl } from "./util";
+import { devLog, getApiUrl } from "./util";
 import { Analytics } from "./analytics";
 import { Quote, QuoteArgs } from "./types";
 const QUOTE_TIMEOUT = 10_000;
@@ -39,12 +39,14 @@ export const fetchQuote = async (
   chainId?: number,
   analytics?: Analytics
 ) => {
-  if(!chainId) {
+  if (!chainId) {
     throw new Error("chainId is missing in constructSDK");
   }
   const apiUrl = getApiUrl(chainId);
-  
+
   analytics?.onQuoteRequest(args);
+
+  devLog("quote start", { args });
 
   try {
     const response = await promiseWithTimeout(
@@ -74,8 +76,12 @@ export const fetchQuote = async (
       throw new Error(quote.error);
     }
     analytics?.onQuoteSuccess(quote);
+    devLog("quote success", { quote });
+
     return quote as Quote;
   } catch (error: any) {
+    devLog("quote error", { error });
+
     throw new Error(error.message);
   }
 };

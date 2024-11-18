@@ -1,6 +1,6 @@
 import { Analytics } from "./analytics";
 import { Quote } from "./types";
-import { getApiUrl, delay } from "./util";
+import { getApiUrl, delay, devLog } from "./util";
 
 interface Args {
   signature: string;
@@ -61,6 +61,7 @@ export const swap = async (
   }
 
   const apiUrl = getApiUrl(chainId);
+  devLog("swap start", { signature, txData: dexRouterData, quote });
   analytics?.onSwapRequest();
 
   swapX({
@@ -88,9 +89,12 @@ export const swap = async (
       throw new Error("swap failed");
     }
     analytics?.onSwapSuccess(txHash);
+    devLog("swap success", { txHash });
 
     return txHash;
   } catch (error) {
+    devLog("swap failed", { error });
+
     analytics?.onSwapFailed((error as any).message);
     throw error;
   }
@@ -112,6 +116,7 @@ export const getTxDetails = async (
   if (!chainId) {
     throw new Error("chainId is missing in constructSDK");
   }
+  devLog("fething tx details", { txHash });
 
   const apiUrl = getApiUrl(chainId);
   for (let i = 0; i < 10; ++i) {
@@ -135,6 +140,7 @@ export const getTxDetails = async (
 
       if (result && result.status?.toLowerCase() === "mined") {
         analytics?.onTxDetailsSuccess(result.exactOutAmount, result.gasCharges);
+        devLog("tx details", { details: result });
 
         return {
           ...result,
@@ -142,6 +148,7 @@ export const getTxDetails = async (
         };
       }
     } catch (error: any) {
+      devLog("tx details failed", { error: error });
       throw new Error(error.message);
     }
   }
