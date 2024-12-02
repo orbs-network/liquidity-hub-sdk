@@ -26,5 +26,6 @@ export interface QuoteArgs {
     error?: string;
     gasAmountOut?: string;
     referencePrice?: string;
+    userMinOutAmountWithGas?: string;
   }
   
