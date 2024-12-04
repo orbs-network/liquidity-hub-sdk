@@ -76,9 +76,11 @@ export const fetchQuote = async (
       throw new Error(quote.error);
     }
     analytics?.onQuoteSuccess(quote);
+    const typedQuote = quote as Quote;
     devLog("quote success", { quote });
+    devLog('price compare', {lhPrice: typedQuote.userMinOutAmountWithGas, dexPrice: args.dexMinAmountOut})
 
-    return quote as Quote;
+    return typedQuote
   } catch (error: any) {
     devLog("quote error", { error });
 
