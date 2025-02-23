@@ -25,6 +25,8 @@ export const getApiUrl = (chainId: number) => {
       return "https://zkevm.hub.orbs.network";
     case 146:
       return "https://sonic.hub.orbs.network";
+    case 42161:
+      return "https://arbi.hub.orbs.network";
 
     default:
       return "https://hub.orbs.network";
@@ -34,7 +36,7 @@ export const getApiUrl = (chainId: number) => {
 export const devLog = (...args: any[]) => {
   try {
     if (localStorage.getItem("lhDebug")) {
-      console.log(...args, 'LH log');
+      console.log(...args, "LH log");
     }
   } catch (error) {}
 };

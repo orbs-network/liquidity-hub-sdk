@@ -33,7 +33,7 @@ class LiquidityHubSDK {
   private blockAnalytics: boolean;
   constructor(args: Args) {
     this.chainId = args.chainId;
-    this.partner = args.partner;
+    this.partner = localStorage.getItem('lhOverridePartner') ||  args.partner;
     analytics.init(args.partner, args.chainId);
     this.blockAnalytics = args.blockAnalytics || false;
   }
