@@ -23,6 +23,7 @@ const analyticsMethods = () => {
     onSignatureRequest: analytics.onSignatureRequest.bind(analytics),
     onSignatureFailed: analytics.onSignatureFailed.bind(analytics),
     onTradeSuccess: analytics.onTradeSuccess.bind(analytics),
+    onDisabled: analytics.onDisabled.bind(analytics),
   };
 };
 
