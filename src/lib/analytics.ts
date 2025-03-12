@@ -1,8 +1,7 @@
 import { QuoteArgs, Quote } from "./types";
 
-
 type analyticsActionState = "pending" | "success" | "failed" | "null" | "";
-type Executor = 'dex' | 'liquidity-hub'
+type Executor = "dex" | "liquidity-hub";
 interface AnalyticsData {
   moduleLoaded: boolean;
   liquidityHubDisabled: boolean;
@@ -208,6 +207,12 @@ export class Analytics {
       quoteState: "failed",
       isNotClobTradeReason: `quote-failed`,
       quoteMillis: Date.now() - this.quoteStart,
+    });
+  }
+
+  onDisabled() {
+    this.updateAndSend({
+      liquidityHubDisabled: true,
     });
   }
 
