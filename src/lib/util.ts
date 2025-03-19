@@ -25,8 +25,8 @@ export const getApiUrl = (chainId: number) => {
       return "https://zkevm.hub.orbs.network";
     case 146:
       return "https://sonic.hub.orbs.network";
-    // case 42161:
-    //   return "https://arbi.hub.orbs.network";
+    case 42161:
+      return "https://arbi.hub.orbs.network";
 
     default:
       return "https://hub.orbs.network";

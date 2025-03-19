@@ -22,6 +22,7 @@ export interface QuoteArgs {
     sessionId: string;
     serializedOrder: string;
     permitData: any;
+    eip712: any;
     minAmountOut: string;
     error?: string;
     gasAmountOut?: string;
