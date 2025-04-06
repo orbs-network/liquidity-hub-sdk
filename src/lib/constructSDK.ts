@@ -22,8 +22,8 @@ const analyticsMethods = () => {
     onSignatureSuccess: analytics.onSignatureSuccess.bind(analytics),
     onSignatureRequest: analytics.onSignatureRequest.bind(analytics),
     onSignatureFailed: analytics.onSignatureFailed.bind(analytics),
-    onTradeSuccess: analytics.onTradeSuccess.bind(analytics),
     onDisabled: analytics.onDisabled.bind(analytics),
+    onTradeSuccess: analytics.onTradeSuccess.bind(analytics),
   };
 };
 
@@ -66,7 +66,6 @@ class LiquidityHubSDK {
       txHash,
       quote,
       this.chainId,
-      this.blockAnalytics ? undefined : analytics
     );
   }
 }

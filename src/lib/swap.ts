@@ -111,7 +111,6 @@ export const getTxDetails = async (
   txHash: string,
   quote?: Quote,
   chainId?: number,
-  analytics?: Analytics
 ): Promise<TxDetailsFromApi> => {
   if (!chainId) {
     throw new Error("chainId is missing in constructSDK");
@@ -139,7 +138,6 @@ export const getTxDetails = async (
       const result = await response?.json();
 
       if (result && result.status?.toLowerCase() === "mined") {
-        analytics?.onTxDetailsSuccess(result.exactOutAmount, result.gasCharges);
         devLog("tx details", { details: result });
 
         return {
@@ -152,7 +150,6 @@ export const getTxDetails = async (
       throw new Error(error.message);
     }
   }
-  analytics?.onTxDetailsFailed();
   throw new Error("swap timeout");
 };
 

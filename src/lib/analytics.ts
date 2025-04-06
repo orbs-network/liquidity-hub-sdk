@@ -1,7 +1,6 @@
 import { QuoteArgs, Quote } from "./types";
 
 type analyticsActionState = "pending" | "success" | "failed" | "null" | "";
-type Executor = "dex" | "liquidity-hub";
 interface AnalyticsData {
   moduleLoaded: boolean;
   liquidityHubDisabled: boolean;
@@ -67,13 +66,21 @@ interface AnalyticsData {
   exactOutAmount?: string;
   gasCharges?: string;
 
-  tradeOutAmount?: string;
-  tradeUsdValue?: string;
-  executor?: Executor;
-  dexLiquidityProvider?: string;
+  // init trade
+  outAmountLH?: string;
+  outAmountLhUI?: string;
+  outAmountDex?: string;
+  outAmountDexUI?: string;
+  minAmountOutLH?: string;
+  minAmountOutLhUI?: string;
+  minAmountOutDex?: string;
+  minAmountOutDexUI?: string;
+  inAmountUsd?: number;
+  outAmountUsd?: number;
+  executor?: "lh" | "dex";
 }
 
-const ANALYTICS_VERSION = 0.8;
+const ANALYTICS_VERSION = 0.9;
 const BI_ENDPOINT = `https://bi.orbs.network/putes/liquidity-hub-ui-${ANALYTICS_VERSION}`;
 
 const getDiff = (quoteAmountOut?: string, dexAmountOut?: string) => {
@@ -111,49 +118,66 @@ function generateId() {
 }
 
 export class Analytics {
-  private data = {} as Partial<AnalyticsData>;
+  private data = { _id: generateId() } as Partial<AnalyticsData>;
   private timeout: any = undefined;
   private signatureStart = 0;
   private wrapStart = 0;
   private approvalStart = 0;
   private swapStart = 0;
   private quoteStart = 0;
-  private prevData = {} as Partial<AnalyticsData>;
 
   constructor() {
-    let liquidityHubDisabled = false;
-    this.data = {
-      _id: generateId(),
-      version: ANALYTICS_VERSION,
-    };
-
-    try {
-      liquidityHubDisabled = JSON.parse(
-        localStorage.redux_localstorage_simple_user
-      ).userLiquidityHubDisabled;
-    } catch (error) {}
-
     this.updateAndSend({
       moduleLoaded: true,
-      liquidityHubDisabled: !!liquidityHubDisabled,
-    });
+    }, true);
+  }
+
+  public updateAndSend(
+    values = {} as Partial<AnalyticsData>,
+    skipTimeout = false
+  ) {
+    this.data = {
+      ...this.data,
+      ...values,
+    };
+    if (!skipTimeout) {
+      clearTimeout(this.timeout);
+      this.timeout = setTimeout(() => {
+        sendBI(this.data);
+      }, 1_000);
+    } else {
+      sendBI(this.data);
+    }
+  }
+
+  onTradeSuccess(args: {
+    outAmountLH?: string;
+    outAmountDex?: string;
+    minAmountOutLH?: string;
+    minAmountOutDex?: string;
+    outAmountLhUI?: string;
+    outAmountDexUI?: string;
+    minAmountOutLhUI?: string;
+    minAmountOutDexUI?: string;
+    inAmountUsd?: number;
+    outAmountUsd?: number;
+    executor?: "lh" | "dex";
+  }) {
+    this.updateAndSend(args, true);
+    setTimeout(() => {
+      this.data = {
+        _id: generateId(),
+        version: ANALYTICS_VERSION,
+        chainId: this.data.chainId,
+        partner: this.data.partner,
+      };
+    }, 500);
   }
 
   init(partner: string, chainId?: number) {
     if (this.data.chainId !== chainId || this.data.partner !== partner) {
       this.updateAndSend({ chainId, partner });
     }
-  }
-
-  public updateAndSend(values = {} as Partial<AnalyticsData>) {
-    this.data = {
-      ...this.data,
-      ...values,
-    };
-    clearTimeout(this.timeout);
-    this.timeout = setTimeout(() => {
-      sendBI(this.data);
-    }, 1_000);
   }
 
   onQuoteRequest(args: QuoteArgs) {
@@ -238,20 +262,6 @@ export class Analytics {
     });
   }
 
-  onTradeSuccess(
-    tradeOutAmount?: string,
-    tradeUsdValue?: string,
-    executor?: Executor,
-    dexLiquidityProvider?: string
-  ) {
-    this.updateAndSend({
-      executor,
-      tradeOutAmount,
-      tradeUsdValue,
-      dexLiquidityProvider,
-    });
-  }
-
   onWrapRequest() {
     this.wrapStart = Date.now();
     this.updateAndSend({ wrapState: "pending" });
@@ -271,24 +281,6 @@ export class Analytics {
       wrapMillis: Date.now() - this.wrapStart,
       isNotClobTradeReason: "wrap failed",
     });
-  }
-
-  onTxDetailsSuccess(exactOutAmount: string, gasCharges: string) {
-    const data = {
-      ...this.prevData,
-      exactOutAmount,
-      gasCharges,
-      getDetailsState: "success",
-    } as Partial<AnalyticsData>;
-    sendBI(data);
-  }
-
-  onTxDetailsFailed() {
-    const data = {
-      ...this.prevData,
-      getDetailsState: "failed",
-    } as Partial<AnalyticsData>;
-    sendBI(data);
   }
 
   onSignatureRequest() {
@@ -319,23 +311,12 @@ export class Analytics {
   }
 
   onSwapSuccess(txHash: string) {
-    this.data = {
-      ...this.data,
+    this.updateAndSend({
       txHash,
       swapMillis: Date.now() - this.swapStart,
       swapState: "success",
       isClobTrade: true,
-    } as AnalyticsData;
-
-    this.prevData = { ...this.data };
-
-    sendBI(this.data);
-    this.data = {
-      _id: generateId(),
-      version: ANALYTICS_VERSION,
-      chainId: this.data.chainId,
-      partner: this.data.partner,
-    };
+    });
   }
 
   onSwapFailed(error: string) {
