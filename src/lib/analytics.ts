@@ -78,9 +78,10 @@ interface AnalyticsData {
   inAmountUsd?: number;
   outAmountUsd?: number;
   executor?: "lh" | "dex";
+  isFallbackLH?: boolean;
 }
 
-const ANALYTICS_VERSION = 0.9;
+const ANALYTICS_VERSION = 0.91;
 const BI_ENDPOINT = `https://bi.orbs.network/putes/liquidity-hub-ui-${ANALYTICS_VERSION}`;
 
 const getDiff = (quoteAmountOut?: string, dexAmountOut?: string) => {
@@ -162,6 +163,7 @@ export class Analytics {
     inAmountUsd?: number;
     outAmountUsd?: number;
     executor?: "lh" | "dex";
+    isFallbackLH?: boolean;
   }) {
     this.updateAndSend(args, true);
     setTimeout(() => {
